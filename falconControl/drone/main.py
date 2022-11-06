@@ -6,9 +6,20 @@ import time
 def main():
     open('/usr/local/lib/python2.7/dist-packages/falcondrone/falconControl/drone/test.txt', 'w').close()
     open('/usr/local/lib/python2.7/dist-packages/falcondrone/falconControl/drone/commands.txt', 'w').close()
-    client = ssh_client_connect()
+    ssh_information , target_file = False
+    with open('/usr/local/lib/python2.7/dist-packages/falcondrone/falconControl/drone/commands.txt',
+              'r') as fi:  # open file to write and read
+            while not ssh_information:
+                info = fi.readline().split(':')
+                if info:
+                    client = ssh_client_connect(info)
+                    ssh_information = True
+            while not got_target:
+                target_file = fi.readline()
+                if target_file:
+                    got_target = True
     print("connected to ssh serkan")
-    commands(client)
+    commands(client, target_file)
 
 
 def run(line):
@@ -17,7 +28,7 @@ def run(line):
     f.close()
 
 
-def commands(client):
+def commands(client, target_file):
     land = True  # continue reading lines until drone lands
     connected = False  # check whether the connection is done
     with open('/usr/local/lib/python2.7/dist-packages/falcondrone/falconControl/drone/commands.txt',
@@ -28,7 +39,7 @@ def commands(client):
                 #info = "echo " + vehicle.airspeed + " " + vehicle.location.global_relative_frame.alt + " " + vehicle.battery.level +  ">> /Users/serkanakin/Desktop/test.txt"
                 #client.exec_command(info)
             if not connected:
-                inf = 'echo "test passed">> /Users/serkanakin/Desktop/test.txt'
+                inf = 'echo "test passed" >> ' + target_file
                 client.exec_command(inf)
             line = fi.readline()  # read from commands.txt
             if line:  # when new command received
@@ -72,10 +83,10 @@ def readCommands(line, vehicle):
     elif command[0] == "sped":
         vehicle.airspeed = int(command[2])
 
-def ssh_client_connect():
+def ssh_client_connect(info):
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect('172.20.10.2', username='serkanakin', password='082003')
+    client.connect(info[0], username = info[1], password = info[2])
     return client
 
 
