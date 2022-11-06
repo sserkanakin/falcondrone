@@ -3,7 +3,6 @@ from pymavlink import mavutil  # Needed for command message definitions
 import time
 import math
 
-drone = ""
 # connects to the drone or the simulator, according to the input we give
 def droneConnect(connection_string, baud):
     print("Connecting to drone")
@@ -51,7 +50,8 @@ def takeoff(vehicle, aTargetAltitude):
 
 
 # given the directions and the time, drone will move accordingly
-def move_horizontal(vehicle, direction, metres, gotoFunction = drone.simple_goto):
+def move_horizontal(vehicle, direction, metres):
+    gotoFunction = vehicle.simple_goto
     yaw = vehicle.attitude.yaw
     if 0 <= yaw <= 90:
         dir_comp = "N"
