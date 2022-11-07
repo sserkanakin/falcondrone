@@ -6,19 +6,20 @@ import time
 def main():
     open('/usr/local/lib/python2.7/dist-packages/falcondrone/falconControl/drone/test.txt', 'w').close()
     open('/usr/local/lib/python2.7/dist-packages/falcondrone/falconControl/drone/commands.txt', 'w').close()
-    ssh_information , target_file = False
+    i = 0
     with open('/usr/local/lib/python2.7/dist-packages/falcondrone/falconControl/drone/commands.txt',
               'r') as fi:  # open file to write and read
-            while not ssh_information:
-                info = fi.readline().split(':')
+            while i == 0:
+                info = fi.readline()
                 if info:
+                    info = info.split(':')
                     client = ssh_client_connect(info)
-                    ssh_information = True
-            while not got_target:
+                    i = 1
+            while i == 1:
                 target_file = fi.readline()
                 if target_file:
-                    got_target = True
-    print("connected to ssh serkan")
+                    i = 2
+    run("connected to ssh serkan")
     commands(client, target_file)
 
 
@@ -29,18 +30,23 @@ def run(line):
 
 
 def commands(client, target_file):
+    target_file = target_file.replace(" ", "\ ")
     land = True  # continue reading lines until drone lands
     connected = False  # check whether the connection is done
+    time.sleep(5)
+    open('/usr/local/lib/python2.7/dist-packages/falcondrone/falconControl/drone/test.txt', 'w').close()
+    open('/usr/local/lib/python2.7/dist-packages/falcondrone/falconControl/drone/commands.txt', 'w').close()
     with open('/usr/local/lib/python2.7/dist-packages/falcondrone/falconControl/drone/commands.txt',
               'r+') as fi:  # open file to write and read
         while land:  # while we have not received the land command which will end the program
             time.sleep(1)
-            #if connected:
-                #info = "echo " + vehicle.airspeed + " " + vehicle.location.global_relative_frame.alt + " " + vehicle.battery.level +  ">> /Users/serkanakin/Desktop/test.txt"
-                #client.exec_command(info)
+            if connected:
+                info = "echo " + vehicle.airspeed + " " + vehicle.location.global_relative_frame.alt + " " + vehicle.battery.level + " >> " + target_file
+                client.exec_command(info)
             if not connected:
                 inf = 'echo "test passed" >> ' + target_file
                 client.exec_command(inf)
+                run("here\n")
             line = fi.readline()  # read from commands.txt
             if line:  # when new command received
                 print(line)
@@ -48,12 +54,10 @@ def commands(client, target_file):
                     if line != "s\n":  # actual connection over tcp
                         vehicle = falcon.droneConnect(line, 57600)
                     else:  # testing
-                        print(line)
                         fi.write(line)
                         vehicle = "test"
                         connected = True
                 elif vehicle == "test":
-                    print(line)
                     if "land" in line:
                         land = False
                     fi.write(line)
@@ -86,7 +90,7 @@ def readCommands(line, vehicle):
 def ssh_client_connect(info):
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(info[0], username = info[1], password = info[2])
+    client.connect(info[0], username = info[1], password = info[2][:-1])
     return client
 
 
